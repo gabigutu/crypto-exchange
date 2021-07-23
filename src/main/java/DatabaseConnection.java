@@ -11,12 +11,10 @@ public class DatabaseConnection {
     }
 
     private void init() {
-
         String databaseURL = "jdbc:mysql://127.0.0.1:3306/cryptoexchange";
         Properties properties = new Properties();
         properties.setProperty("user", "root");
-       // properties.setProperty("password", "HARCEAPARCEA123");
-        properties.setProperty("password", System.getenv("CRYPTO_PASSWORD"));
+        properties.setProperty("password", "1234");
         try {
             this.connection = DriverManager.getConnection(databaseURL, properties);
         } catch (SQLException exception) {

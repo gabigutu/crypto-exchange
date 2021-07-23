@@ -40,10 +40,11 @@ public abstract class ActiveRecord{
             }
 //            fieldCount ++;
 //            sqlQuery += f.getName() + ", ";
-            myFields.add(f.getName());
+            myFields.add("`" + f.getName() + "`");
+
         }
 
-        sqlQuery += myFields.toString().substring(1, myFields.toString().length() - 1) + ") values ( ";
+        sqlQuery +=  myFields.toString().substring(1, myFields.toString().length() - 1) + " ) values ( ";
         for (String s: myFields) {
             sqlQuery += "?, ";
         }
@@ -67,6 +68,8 @@ public abstract class ActiveRecord{
                 st.setString(count, (String) f.get(this));
             } else if (f.getType() == float.class) {
                 st.setFloat(count, f.getFloat(this));
+            } else if (f.getType() == double.class) {
+                st.setDouble(count, f.getDouble(this));
             }
             count ++;
         }
@@ -210,4 +213,35 @@ public abstract class ActiveRecord{
 
         return result;
     }
+    public <T> T  getRate(int from, int to) throws SQLException, InstantiationException, IllegalAccessException, NoSuchFieldException { // TODO return object
+        Class<ActiveRecord> c = (Class<ActiveRecord>) this.getClass();
+        ActiveRecordEntity arAnnotation = c.getAnnotation(ActiveRecordEntity.class);
+        DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+        Connection connection = databaseConnection.getConnection();
+        String sqlQuery = "SELECT * FROM exchange_rates WHERE `from` = ? AND `to` = ?";
+        PreparedStatement ps = connection.prepareStatement(sqlQuery);
+        ps.setInt(1, from);
+        ps.setInt(2, to);
+        ResultSet result = ps.executeQuery();
+        ResultSetMetaData metaData = result.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        T myObj = (T) c.newInstance();
+        while (result.next()) {
+
+            // pentru fiecare coloana din resultSet trebuie sa gasesc atributul asociat in clasa generica
+            for (int i = 1; i < columnCount + 1; i++) {
+                String myColumn = metaData.getColumnName(i);
+                Field f = c.getField(myColumn);
+                if (f.getType() == int.class) {
+                    f.setInt(myObj, result.getInt(i)); // myObj[f] = resultSet.getInt(i) -> myObj["id"], myObj["code"], myObj["first_name"]
+                } else if (f.getType() == String.class) {
+                    f.set(myObj, result.getString(i));
+                } else if (f.getType() == float.class) {
+                    f.setFloat(myObj, result.getFloat(i));
+                }
+            }
+        }
+        return myObj;
+    }
+
 }
